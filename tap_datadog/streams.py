@@ -48,24 +48,7 @@ class AggregateLogs(TapDatadogStream):
     #primary_keys = ["id"]
     records_jsonpath = "$.data.buckets.[*]" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
-    #schema_filepath = SCHEMAS_DIR / "events.json"  # Optional: use schema_filepath with .json inside schemas/ 
-
-    # Optional: If using schema_filepath, remove the propertyList schema method below
-    schema = th.PropertiesList(
-        th.Property("computes", th.ObjectType(
-            th.Property("c1", th.NumberType),
-            th.Property("c0", th.NumberType),
-            )
-        ),
-        th.Property("by", th.ObjectType(
-            th.Property("status", th.StringType),
-            th.Property("@http.status_code", th.NumberType),
-            th.Property("host", th.StringType),
-            )
-        ),
-    
-    ).to_dict()
-
+    schema_filepath = SCHEMAS_DIR / "aggregate_logs.json"  # Optional: use schema_filepath with .json inside schemas/ 
 
     def prepare_request_payload(
         self, context: Optional[dict], next_page_token: Optional[Any]

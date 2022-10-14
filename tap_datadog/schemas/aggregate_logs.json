@@ -1,0 +1,51 @@
+{
+    "type": "object",
+    "properties": {
+        "computes": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "c1": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "c0": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "by": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "status": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "@http.status_code": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "host": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        }
+    }
+}
