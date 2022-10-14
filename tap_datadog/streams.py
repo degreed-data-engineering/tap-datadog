@@ -40,7 +40,7 @@ class TapDatadogStream(RESTStream):
         http_headers["DD-APPLICATION-KEY"] = self.config.get("app_key")
 
         return SimpleAuthenticator(stream=self, auth_headers=http_headers)
- 
+
 class AggregateLogs(TapDatadogStream):
     name = "aggregate_logs" # Stream name 
     path = "/api/v2/logs/analytics/aggregate" # API endpoint after base_url 
