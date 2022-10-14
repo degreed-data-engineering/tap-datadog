@@ -55,6 +55,7 @@ class AggregateLogs(TapDatadogStream):
         th.Property("computes", th.ObjectType(
             th.Property("c1", th.NumberType),
             th.Property("c0", th.NumberType),
+            )
         ),
         th.Property("by", th.ObjectType(
             th.Property("status", th.StringType),
@@ -62,7 +63,7 @@ class AggregateLogs(TapDatadogStream):
             th.Property("host", th.StringType),
             )
         ),
-    )
+    
     ).to_dict()
 
 
