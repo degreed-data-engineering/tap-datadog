@@ -27,6 +27,12 @@
                 "null"
             ],
             "properties": {
+                "@@Properties.OrganizationId": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
                 "status": {
                     "type": [
                         "string",
