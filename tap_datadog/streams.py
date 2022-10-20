@@ -80,7 +80,7 @@ class SLO_History(TapDatadogStream):
 
     path = f"/api/v1/slo/{slo_id}/history?from_ts=1664582400&to_ts=1666216129" # API endpoint after base_url 
     
-    primary_keys = ["monitor_modified"]
+    primary_keys = None
     records_jsonpath = "$.['data']" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
     #schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
