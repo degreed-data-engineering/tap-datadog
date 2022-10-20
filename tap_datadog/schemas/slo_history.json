@@ -9,7 +9,7 @@
         },
         "type_id": {
             "type": [
-                "string",
+                "number",
                 "null"
             ]
         },
@@ -97,12 +97,6 @@
                         "null"
                     ]
                 },
-                "preview": {
-                    "type": [
-                        "boolean",
-                        "null"
-                    ]
-                },
                 "monitor_type": {
                     "type": [
                         "string",
@@ -129,37 +123,65 @@
                         "null"
                     ]
                 },
-                "monitor_tags": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
                 "creator": {
                     "type": [
-                        "string",
+                        "object",
                         "null"
-                    ]
+                    ],
+                    "properties": {
+                        "handle": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "name": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "email": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
                 },
                 "thresholds": {
                     "type": [
-                        "string",
+                        "object",
                         "null"
-                    ]
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        },
+                        "target_display": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "timeframe": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
                 },
                 "type_id": {
                     "type": [
-                        "string",
+                        "number",
                         "null"
                     ]
                 },
                 "id": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "monitor_ids": {
                     "type": [
                         "string",
                         "null"
@@ -179,9 +201,14 @@
                 },
                 "tags": {
                     "type": [
-                        "string",
+                        "array",
                         "null"
-                    ]
+                    ],
+                    "items": {
+                        "type": [
+                            "string"
+                        ]
+                    }
                 },
                 "modified_at": {
                     "type": [
