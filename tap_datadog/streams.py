@@ -81,53 +81,75 @@ class SLO_History(TapDatadogStream):
     path = f"/api/v1/slo/{slo_id}/history?from_ts=1664582400&to_ts=1666216129" # API endpoint after base_url 
     
 
-    records_jsonpath = "$.['data']" # https://jsonpath.com Use requests response json to identify the json path 
+    records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
-    schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
-    # schema = th.PropertiesList(
-    #     th.Property("to_ts", th.NumberType),
-    #     th.Property("type_id", th.StringType),
-    #     th.Property("thresholds", th.ObjectType(
-    #         th.Property("30d", th.ObjectType(
-    #             th.Property("target", th.NumberType),
-    #             th.Property("target_display", th.StringType),
-    #             th.Property("timeframe", th.StringType),
-    #         ))
-    #     )),
-    #     th.Property("overall", th.ObjectType(
-    #         th.Property("name", th.StringType),
-    #         th.Property("sli_value", th.NumberType),
-    #         th.Property("precision", th.ObjectType(
-    #             th.Property("30d", th.NumberType),
-    #             th.Property("custom", th.NumberType),
-    #         )),
-    #         th.Property("monitor_modified", th.NumberType),
-    #         th.Property("span_precision", th.NumberType),
-    #         th.Property("preview", th.BooleanType),
-    #         th.Property("monitor_type", th.StringType),
-    #     )
-    #     ),
-    #     th.Property("from_ts", th.NumberType),
-    #     th.Property("slo", th.ObjectType(
-    #         th.Property("description", th.StringType),
-    #         th.Property("monitor_tags", th.StringType),
-    #         th.Property("creator", th.StringType),
-    #         th.Property("thresholds", th.StringType),
-    #         th.Property("type_id", th.NumberType),
-    #         th.Property("id", th.StringType),
-    #         th.Property("type_id", th.StringType),
-    #         th.Property("monitor_ids", th.StringType),
-    #         th.Property("name", th.StringType),
-    #         th.Property("created_at", th.NumberType),
-    #         th.Property("tags", th.StringType),
-    #         th.Property("modified_at", th.NumberType),
-    #         th.Property("type", th.StringType),
-    #     )),
-    #     th.Property("type", th.StringType),
-        # th.Property("name", th.StringType),
-        # th.Property("name", th.StringType),
-        
-    # ).to_dict()
+    #schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
+    schema = th.PropertiesList(
+        th.Property("to_ts", th.NumberType),
+        th.Property("type_id", th.NumberType),
+        th.Property(
+            "thresholds", 
+            th.ObjectType(
+                th.Property(
+                    "30d",
+                    th.ObjectType(
+                        th.Property("target", th.NumberType),
+                        th.Property("target_display", th.StringType),
+                        th.Property("timeframe", th.StringType)
+                    )
+                )
+            )
+        ),
+        th.Property(
+            "overall",
+            th.ObjectType(
+                th.Property("name", th.StringType),
+                th.Property("sli_value", th.NumberType),
+                th.Property(
+                    "precision",
+                    th.ObjectType(
+                        th.Property("30d", th.NumberType),
+                        th.Property("custom", th.NumberType)
+                    )
+                ),
+            th.Property("monitor_modified", th.NumberType),
+            th.Property("span_precision", th.NumberType),
+            th.Property("monitor_type", th.StringType)
+            )
+        ),
+        th.Property("from_ts", th.NumberType),
+        th.Property(
+            "slo",
+            th.ObjectType(
+            th.Property("description", th.StringType),
+            th.Property(
+                "creator",
+                th.ObjectType(
+                    th.Property("handle", th.StringType),
+                    th.Property("name", th.StringType),
+                    th.Property("email", th.StringType)
+
+                )
+            ),
+            th.Property(
+                "thresholds",
+                th.ObjectType(
+                    th.Property("target", th.NumberType),
+                    th.Property("target_display", th.StringType),
+                    th.Property("timeframe", th.StringType)
+
+                )
+            ),
+            th.Property("type_id", th.NumberType),
+            th.Property("id", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("created_at", th.NumberType),
+            th.Property("tags", th.ArrayType(th.StringType)),
+            th.Property("modified_at", th.NumberType),
+            th.Property("type", th.StringType)
+        )),
+        th.Property("type", th.StringType)
+    ).to_dict()
 
 
 
