@@ -12,6 +12,10 @@ from functools import cached_property
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import SimpleAuthenticator
+
+
+from singer_sdk import Tap, Stream
+
 import requests
 
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
@@ -56,34 +60,59 @@ class AggregateLogs(TapDatadogStream):
         self, context: Optional[dict], next_page_token: Optional[Any]
     ) -> Optional[dict]:
         """Define request parameters to return"""
-       
+
         todayUTC = datetime.now(timezone.utc).date()
         yesterdayUTC = todayUTC - timedelta(1)
 
         from_date = f"{yesterdayUTC}T00:00:00+03:00"
         to_date = f"{yesterdayUTC}T23:12:59+03:00"
 
-
         payload = {"compute": [{"aggregation": "count", "type": "total" }, { "aggregation": "sum", "type": "total", "metric": "@Properties.Elapsed" } ], "filter": { "query": "source:degreed.api @MessageTemplate:\"HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms\" host: api.degreed.com OR api.eu.degreed.com OR api.ca.degreed.com", "from": from_date, "to": to_date, "indexes": [ "main" ] }, "group_by": [ { "facet": "status" }, { "facet": "host" }, { "facet": "@http.status_code" }, { "facet": "@Properties.OrganizationId" } ] }
         return payload
 
-class SLO_History(TapDatadogStream):
+
+class SLO_History(TapDatadogStream):        
+
     name = "slo_history" # Stream name 
     rest_method = "GET"
+
     today = datetime.today()
-    current_epoch = time.time()
+ 
+    if today.day - 1 < 1:
+        if today.month == 1:
+            year = today.year - 1 
+            month = 12
+        else: 
+            year = today.year
+            month = today.month - 1
+
+        first_of_month_date = datetime(year, month, 1, 0, 0, 0)
+        first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+        last_day_month = calendar.monthrange(year, month)[1]
+        to_time_date = datetime(year, month, last_day_month, 23, 59, 59)
+        to_time_epoch = calendar.timegm(to_time_date.timetuple())
     
-    first_of_month_date = datetime(today.year, today.month, 1, 0, 0, 0)
-    first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
-    
+    else: 
+        first_of_month_date = datetime(today.year, today.month, 1, 0, 0, 0)
+        first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+        to_time_date = datetime(today.year, today.month, today.day - 1, 23, 59, 59)
+        to_time_epoch = calendar.timegm(to_time_date.timetuple())
+
+
+
     slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
 
-    path = f"/api/v1/slo/{slo_id}/history?from_ts=1664582400&to_ts=1666216129" # API endpoint after base_url 
-    
+    path = f"/api/v1/slo/{slo_id}/history?from_ts={first_of_month_epoch}&to_ts={to_time_epoch}" # API endpoint after base_url 
 
     records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
     schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
+    
+
+   
+ #{"type": "STATE", "value": {"bookmarks": {"slo_history": {"last_record": "2017-07-07T10:20:00Z"}}}}
     # schema = th.PropertiesList(
     #     th.Property("to_ts", th.NumberType),
     #     th.Property("type_id", th.NumberType),

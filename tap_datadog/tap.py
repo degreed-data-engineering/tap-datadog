@@ -7,6 +7,7 @@ import click
 from singer_sdk import Tap, Stream
 from singer_sdk import typing as th
 
+
 from tap_datadog.streams import (
     AggregateLogs,
     SLO_History,
@@ -34,7 +35,6 @@ class TapDatadog(Tap):
         streams =  [stream_class(tap=self) for stream_class in STREAM_TYPES]
 
         return streams
- 
 
 # CLI Execution:
 cli = TapDatadog.cli
