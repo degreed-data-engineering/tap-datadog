@@ -16,6 +16,7 @@ from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import SimpleAuthenticator
 
+
 from singer_sdk.helpers._state import (
     finalize_state_progress_markers,
     get_starting_replication_value,
@@ -27,6 +28,7 @@ from singer_sdk.helpers._state import (
     write_replication_key_signpost,
     write_starting_replication_value,
 )
+
 from singer_sdk import Tap, Stream
 
 import requests
@@ -112,11 +114,15 @@ class SLO_History(TapDatadogStream):
         self.full_sync_from_ts = 0
         self.full_sync_to_ts = 0
 
+        self.next_page_token_epoch = 0
+        self.end_of_month_limit_epoch = 0
+
         self.logger.info(f'FULL_SYNC_DATA')
         self.logger.info(self.full_sync_date)
         self.logger.info(f'CURRENT_TIME')
         self.logger.info(self.current_epoch)
     
+
 
         self.first_of_month_epoch, self.to_time_epoch = self._get_epoch_date_values()
         #self.replication_value_test = self.get_starting_replication_key_value(TapDatadogStream)
@@ -124,18 +130,13 @@ class SLO_History(TapDatadogStream):
 
         self.first_run = True
         self.slo_date_overreach = False
-
         
-        
-       # config_start_date = TapDatadogStream.config.get("start_date")
-        
+    # config_start_date = TapDatadogStream.config.get("start_date")    
 
     name = "slo_history" # Stream name 
     
-
     rest_method = "GET"
     
-
     def _get_epoch_date_values(self):
         today = datetime.today()
 
@@ -174,10 +175,23 @@ class SLO_History(TapDatadogStream):
     
     next_page_token = 0
 
-    primary_keys = ["type_id"]
+    #primary_keys = ["type_id"]
     replication_key = "to_ts"
     schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
     
+
+
+    def _get_first_of_month_epoch(self, epoch):
+
+        date_time = datetime.fromtimestamp(epoch)  
+        date_split = str(date_time).split(' ') 
+        year, month, day = date_split[0].split('-')
+
+        first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
+        first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
+
+        return first_day_of_month_date_epoch
+
 
     def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
@@ -192,33 +206,45 @@ class SLO_History(TapDatadogStream):
                 # Get Start date for initial full sync
                 year, month, day = self.full_sync_date.split('-')
 
+                # get last day of the start_date month
+                last_day_month = calendar.monthrange(int(year), int(month))[1]
+
+                # get epoch for last day of the month
+                last_day_month_date = datetime(int(year), int(month), last_day_month, 0, 0, 0)
+                self.end_of_month_limit_epoch  = calendar.timegm(last_day_month_date.timetuple())
+                ####
+
+                first_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
+                first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+
                 config_start_date = datetime(int(year), int(month), int(day), 0, 0, 0)
                 self.full_sync_from_ts = calendar.timegm(config_start_date.timetuple())
                 
-                self.full_sync_to_ts = self.full_sync_from_ts  + 604800
+                self.full_sync_to_ts = self.full_sync_from_ts  + 86400
                 
-                params["from_ts"] = self.full_sync_from_ts
+                params["from_ts"] = first_of_month_epoch
                 params["to_ts"] = self.full_sync_to_ts
 
                 self.first_run = False
             else: 
-                self.logger.info("NON FULL STREAM")
-                self.full_sync_from_ts = self.full_sync_to_ts
-                self.full_sync_to_ts = self.full_sync_from_ts + 604800
+                
+                self.full_sync_to_ts = self.full_sync_to_ts + 86400
 
-                if self.full_sync_to_ts >= self.current_epoch:
-                    self.full_sync_to_ts = self.current_epoch
+                first_of_month_epoch = self._get_first_of_month_epoch(self.full_sync_to_ts)
+                
+                self.logger.info("******NON FULL STREAM******")
+                self.logger.info(f"first of month: {first_of_month_epoch}")
+                self.logger.info(f"full sync to ts: {self.full_sync_to_ts}")
+                params["from_ts"] = first_of_month_epoch
+                params["to_ts"] = self.full_sync_to_ts
+                
+                if self.full_sync_to_ts + 86400 >= self.current_epoch:
                     self.slo_date_overreach = True
 
-                params["from_ts"] = self.full_sync_from_ts
-                params["to_ts"] = self.full_sync_to_ts
 
 
-      
 
-
-                    
-                self.next_page_token_date = self.full_sync_to_ts
 
         self.logger.info("NEXTPAGE_TOKEN")
         self.logger.info(self.full_sync_next_page)
@@ -232,25 +258,18 @@ class SLO_History(TapDatadogStream):
         return params
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
-        # TODO: Delete this method if not needed.
 
-        self.logger.info("LOGGGER:")
 
         row["slo_id"] = self.slo_id
        # row["last_sync_epoch"] = 1666483188
         row["next_page_key"] = self.full_sync_next_page
-
         self.next_page_token = self.full_sync_next_page
-        # new_row = json.dumps(row)
-        # self.logger.info(new_row)
-        self.logger.info("REPLICATIONKEYYYYY:")
         
 
         if "to_ts" in self.stream_state:
-            self.logger.info("BLARG ON ICE")
+            self.logger.info("Found to_ts state value")
             
         self.logger.info(row)
-
                 
         return row
 
@@ -263,10 +282,14 @@ class SLO_History(TapDatadogStream):
         #       next page. If this is the final page, return "None" to end the
         #       pagination loop.
 
+
+
         if self.slo_date_overreach == True:
+            self.logger.info("No more next page token")
+
             return None
 
-        self.logger.info("BLARGer cheese")
+        self.logger.info("Next page token generated")
         next_page_token = self.full_sync_to_ts
 
         self.logger.info(next_page_token)
