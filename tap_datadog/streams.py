@@ -105,26 +105,28 @@ class SLO_History(TapDatadogStream):
 
         self.slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
 
-        self.full_sync_date = self.config["start_date"]
+        self.configuration_start_date = self.config["start_date"]
         self.current_epoch = int(time.time())
 
 
         self.full_sync_next_page = 1662619320
 
-        self.full_sync_from_ts = 0
+
+        self.get_next_page_token_epoch = 0
+
         self.full_sync_to_ts = 0
 
         self.next_page_token_epoch = 0
         self.end_of_month_limit_epoch = 0
 
         self.logger.info(f'FULL_SYNC_DATA')
-        self.logger.info(self.full_sync_date)
+        self.logger.info(self.configuration_start_date)
         self.logger.info(f'CURRENT_TIME')
         self.logger.info(self.current_epoch)
     
 
 
-        self.first_of_month_epoch, self.to_time_epoch = self._get_epoch_date_values()
+        #self.first_of_month_epoch, self.to_time_epoch = self._get_epoch_date_values()
         #self.replication_value_test = self.get_starting_replication_key_value(TapDatadogStream)
 
 
@@ -137,32 +139,10 @@ class SLO_History(TapDatadogStream):
     
     rest_method = "GET"
     
-    def _get_epoch_date_values(self):
-        today = datetime.today()
 
-        if today.day - 1 < 1:
-            if today.month == 1:
-                year = today.year - 1 
-                month = 12
-            else: 
-                year = today.year
-                month = today.month - 1
 
-            first_of_month_date = datetime(year, month, 1, 0, 0, 0)
-            first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
 
-            last_day_month = calendar.monthrange(year, month)[1]
-            to_time_date = datetime(year, month, last_day_month, 23, 59, 59)
-            to_time_epoch = calendar.timegm(to_time_date.timetuple())
-        
-        else: 
-            first_of_month_date = datetime(today.year, today.month, 1, 0, 0, 0)
-            first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
 
-            to_time_date = datetime(today.year, today.month, today.day - 1, 23, 59, 59)
-            to_time_epoch = calendar.timegm(to_time_date.timetuple())
-
-            return first_of_month_epoch, to_time_epoch
 
     slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
     
@@ -196,64 +176,45 @@ class SLO_History(TapDatadogStream):
     def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {}
-        # params["from_ts"] = self.first_of_month_epoch
-        # params["to_ts"] = self.to_time_epoch
 
 
         if "to_ts" not in self.stream_state:
             if self.first_run:
-                self.logger.info("FULL STREAM")
+
                 # Get Start date for initial full sync
-                year, month, day = self.full_sync_date.split('-')
-
-                # get last day of the start_date month
-                last_day_month = calendar.monthrange(int(year), int(month))[1]
-
-                # get epoch for last day of the month
-                last_day_month_date = datetime(int(year), int(month), last_day_month, 0, 0, 0)
-                self.end_of_month_limit_epoch  = calendar.timegm(last_day_month_date.timetuple())
-                ####
+                year, month, day = self.configuration_start_date.split('-')
 
                 first_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
                 first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
 
+                self.get_next_page_token_epoch = first_of_month_epoch + 86400
 
-                config_start_date = datetime(int(year), int(month), int(day), 0, 0, 0)
-                self.full_sync_from_ts = calendar.timegm(config_start_date.timetuple())
-                
-                self.full_sync_to_ts = self.full_sync_from_ts  + 86400
-                
+                self.logger.info("FULL STREAM")
+                self.logger.info(f"first of month: {first_of_month_epoch}")
+                self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
+
                 params["from_ts"] = first_of_month_epoch
-                params["to_ts"] = self.full_sync_to_ts
+                params["to_ts"] = self.get_next_page_token_epoch
 
-                self.first_run = False
-            else: 
                 
-                self.full_sync_to_ts = self.full_sync_to_ts + 86400
+                self.first_run = False
 
-                first_of_month_epoch = self._get_first_of_month_epoch(self.full_sync_to_ts)
+            else: 
+
+                self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+                first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
                 
                 self.logger.info("******NON FULL STREAM******")
                 self.logger.info(f"first of month: {first_of_month_epoch}")
-                self.logger.info(f"full sync to ts: {self.full_sync_to_ts}")
+                self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
+
                 params["from_ts"] = first_of_month_epoch
-                params["to_ts"] = self.full_sync_to_ts
-                
-                if self.full_sync_to_ts + 86400 >= self.current_epoch:
+                params["to_ts"] = self.get_next_page_token_epoch
+
+
+                if self.get_next_page_token_epoch + 86400 >= self.current_epoch:
                     self.slo_date_overreach = True
-
-
-
-
-
-        self.logger.info("NEXTPAGE_TOKEN")
-        self.logger.info(self.full_sync_next_page)
-        # next_page_token = self.full_sync_next_page
-
-
-        # self.logger.info("replication_key_value****")
-        # self.logger.info(self.get_starting_replication_key_value(TapDatadogStream))
-
+                
 
         return params
 
@@ -262,8 +223,8 @@ class SLO_History(TapDatadogStream):
 
         row["slo_id"] = self.slo_id
        # row["last_sync_epoch"] = 1666483188
-        row["next_page_key"] = self.full_sync_next_page
-        self.next_page_token = self.full_sync_next_page
+        # row["next_page_key"] = self.full_sync_next_page
+        # self.next_page_token = self.full_sync_next_page
         
 
         if "to_ts" in self.stream_state:
@@ -278,24 +239,44 @@ class SLO_History(TapDatadogStream):
         self, response: requests.Response, previous_token: Optional[Any]
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
-        # TODO: If pagination is required, return a token which can be used to get the
-        #       next page. If this is the final page, return "None" to end the
-        #       pagination loop.
-
-
 
         if self.slo_date_overreach == True:
             self.logger.info("No more next page token")
-
+            self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
             return None
 
-        self.logger.info("Next page token generated")
-        next_page_token = self.full_sync_to_ts
+        self.logger.info(f"Next page token generated: {self.get_next_page_token_epoch}")
+        next_page_token = self.get_next_page_token_epoch
 
-        self.logger.info(next_page_token)
         return next_page_token
  
-   
+    
+    # def _get_epoch_date_values(self):
+    #     today = datetime.today()
+
+    #     if today.day - 1 < 1:
+    #         if today.month == 1:
+    #             year = today.year - 1 
+    #             month = 12
+    #         else: 
+    #             year = today.year
+    #             month = today.month - 1
+
+    #         first_of_month_date = datetime(year, month, 1, 0, 0, 0)
+    #         first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+    #         last_day_month = calendar.monthrange(year, month)[1]
+    #         to_time_date = datetime(year, month, last_day_month, 23, 59, 59)
+    #         to_time_epoch = calendar.timegm(to_time_date.timetuple())
+        
+    #     else: 
+    #         first_of_month_date = datetime(today.year, today.month, 1, 0, 0, 0)
+    #         first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+    #         to_time_date = datetime(today.year, today.month, today.day - 1, 23, 59, 59)
+    #         to_time_epoch = calendar.timegm(to_time_date.timetuple())
+
+    #         return first_of_month_epoch, to_time_epoch
  #{"type": "STATE", "value": {"bookmarks": {"slo_history": {"last_record": "2017-07-07T10:20:00Z"}}}}
     # schema = th.PropertiesList(
     #     th.Property("to_ts", th.NumberType),

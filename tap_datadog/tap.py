@@ -27,7 +27,7 @@ class TapDatadog(Tap):
     config_jsonschema = th.PropertiesList(
         th.Property("api_key", th.StringType, required=True, description="DD-API-KEY"),
         th.Property("app_key", th.StringType, required=True, description="DD-APP-KEY"),
-        th.Property("start_date", th.StringType, required=False, description="start date to sync from"),
+        th.Property("start_date", th.StringType, required=True, description="start date to sync from"),
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
