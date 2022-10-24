@@ -117,8 +117,7 @@ class SLO_History(TapDatadogStream):
         self.end_of_month_limit_epoch = 0
 
 
-    
-
+        self.replication_key_value = 0
 
         #self.first_of_month_epoch, self.to_time_epoch = self._get_epoch_date_values()
         #self.replication_value_test = self.get_starting_replication_key_value(TapDatadogStream)
@@ -172,44 +171,70 @@ class SLO_History(TapDatadogStream):
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {}
 
+        # self.logger.info(f"STTE VALUE: {self.stream_state}")
 
-        if "to_ts" not in self.stream_state:
-            if self.first_run:
+        # self.replication_key_value = self.stream_state["replication_key_value"]
+        # self.logger.info(f"STTE VALUE: {self.replication_key_value}")
 
-                # Get Start date for initial full sync
-                year, month, day = self.configuration_start_date.split('-')
-
-                first_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
-                first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
-
-                self.get_next_page_token_epoch = first_of_month_epoch + 86400
-
-                self.logger.info("FULL STREAM")
-                self.logger.info(f"first of month: {first_of_month_epoch}")
-                self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
-
-                params["from_ts"] = first_of_month_epoch
-                params["to_ts"] = self.get_next_page_token_epoch
-
-                
-                self.first_run = False
-
-            else: 
-                
-                
-                first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+        try:
+            if self.replication_key_value == 0:
+                self.replication_key_value = self.stream_state["replication_key_value"]
+                self.get_next_page_token_epoch = self.replication_key_value + 86400
+            else:
                 self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+            
+            first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+            
+
+            params["from_ts"] = first_of_month_epoch
+            params["to_ts"] = self.get_next_page_token_epoch
+
+            if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+                self.slo_date_overreach = True
+            
+
+        except:
+            if "to_ts" not in self.stream_state:
+                if self.first_run:
+
+                    # Get Start date for initial full sync
+                    year, month, day = self.configuration_start_date.split('-')
+
+                    first_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
+                    first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+                    self.get_next_page_token_epoch = first_of_month_epoch + 86400
+
+                    self.logger.info("FULL STREAM")
+                    self.logger.info(f"first of month: {first_of_month_epoch}")
+                    self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
+
+                    params["from_ts"] = first_of_month_epoch
+                    params["to_ts"] = self.get_next_page_token_epoch
+
+                    
+                    self.first_run = False
+                    
+                else: 
+                    #1666396800
+                    
                 
-                self.logger.info("******NON FULL STREAM******")
-                self.logger.info(f"first of month: {first_of_month_epoch}")
-                self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
 
-                params["from_ts"] = first_of_month_epoch
-                params["to_ts"] = self.get_next_page_token_epoch
+                    #1666396800
+
+                    first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+                    self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+                    
+                    self.logger.info("******NON FULL STREAM******")
+                    self.logger.info(f"first of month: {first_of_month_epoch}")
+                    self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
+
+                    params["from_ts"] = first_of_month_epoch
+                    params["to_ts"] = self.get_next_page_token_epoch
 
 
-                if self.get_next_page_token_epoch + 86400 >= int(time.time()):
-                    self.slo_date_overreach = True
+                    if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+                        self.slo_date_overreach = True
                 
 
         return params
