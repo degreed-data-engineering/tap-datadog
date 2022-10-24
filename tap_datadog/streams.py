@@ -1,4 +1,6 @@
 """Stream class for tap-datadog."""
+import logging
+import sys
 
 import base64
 import calendar
@@ -17,6 +19,8 @@ from singer_sdk.authenticators import SimpleAuthenticator
 from singer_sdk import Tap, Stream
 
 import requests
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
@@ -52,6 +56,8 @@ class AggregateLogs(TapDatadogStream):
     path = "/api/v2/logs/analytics/aggregate" # API endpoint after base_url 
     rest_method = "POST"
     #primary_keys = ["id"]
+
+    
     records_jsonpath = "$.data.buckets.[*]" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
     schema_filepath = SCHEMAS_DIR / "aggregate_logs.json"  # Optional: use schema_filepath with .json inside schemas/ 
@@ -63,7 +69,7 @@ class AggregateLogs(TapDatadogStream):
 
         todayUTC = datetime.now(timezone.utc).date()
         yesterdayUTC = todayUTC - timedelta(1)
-
+        
         from_date = f"{yesterdayUTC}T00:00:00+03:00"
         to_date = f"{yesterdayUTC}T23:12:59+03:00"
 
@@ -71,46 +77,83 @@ class AggregateLogs(TapDatadogStream):
         return payload
 
 
+
+# def blarg():
+#     return 1,2
+# hello,bye = blarg()
+# print(hello,bye)
 class SLO_History(TapDatadogStream):        
+# weekly (not daily)
+# monday - sunday
+# start at August 
+    def __init__(self, tap: Tap):
+        super().__init__(tap)
+        self.logger = logging.getLogger(__name__)
+        self.first_of_month_epoch, self.to_time_epoch = self._get_epoch_date_values()
+       # config_start_date = TapDatadogStream.config.get("start_date")
 
     name = "slo_history" # Stream name 
+    primary_keys = ["type_id"]
+    #replication_key = "modified"
+
     rest_method = "GET"
-
-    today = datetime.today()
- 
-    if today.day - 1 < 1:
-        if today.month == 1:
-            year = today.year - 1 
-            month = 12
-        else: 
-            year = today.year
-            month = today.month - 1
-
-        first_of_month_date = datetime(year, month, 1, 0, 0, 0)
-        first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
-
-        last_day_month = calendar.monthrange(year, month)[1]
-        to_time_date = datetime(year, month, last_day_month, 23, 59, 59)
-        to_time_epoch = calendar.timegm(to_time_date.timetuple())
     
-    else: 
-        first_of_month_date = datetime(today.year, today.month, 1, 0, 0, 0)
-        first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
 
-        to_time_date = datetime(today.year, today.month, today.day - 1, 23, 59, 59)
-        to_time_epoch = calendar.timegm(to_time_date.timetuple())
+    def _get_epoch_date_values(self):
+        today = datetime.today()
 
+        if today.day - 1 < 1:
+            if today.month == 1:
+                year = today.year - 1 
+                month = 12
+            else: 
+                year = today.year
+                month = today.month - 1
+
+            first_of_month_date = datetime(year, month, 1, 0, 0, 0)
+            first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+            last_day_month = calendar.monthrange(year, month)[1]
+            to_time_date = datetime(year, month, last_day_month, 23, 59, 59)
+            to_time_epoch = calendar.timegm(to_time_date.timetuple())
+        
+        else: 
+            first_of_month_date = datetime(today.year, today.month, 1, 0, 0, 0)
+            first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+            to_time_date = datetime(today.year, today.month, today.day - 1, 23, 59, 59)
+            to_time_epoch = calendar.timegm(to_time_date.timetuple())
+
+            return first_of_month_epoch, to_time_epoch
 
 
     slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
 
-    path = f"/api/v1/slo/{slo_id}/history?from_ts={first_of_month_epoch}&to_ts={to_time_epoch}" # API endpoint after base_url 
-
-    records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
+    #path = f"/api/v1/slo/{slo_id}/history?from_ts={first_of_month_epoch}&to_ts={to_time_epoch}" # API endpoint after base_url 
+    path = f"/api/v1/slo/{slo_id}/history"
+    #records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
+    records_jsonpath = "$[*]" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
     schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
     
 
+    def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params: dict = {}
+        params["from_ts"] = self.first_of_month_epoch
+        params["to_ts"] = self.to_time_epoch
+    
+        return params
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+        # TODO: Delete this method if not needed.
+
+        self.logger.info("LOGGGER:")
+
+        row["sync_to"] = "blarger"
+        new_row = json.dumps(row)
+        self.logger.info(new_row)
+        return row
    
  #{"type": "STATE", "value": {"bookmarks": {"slo_history": {"last_record": "2017-07-07T10:20:00Z"}}}}
     # schema = th.PropertiesList(

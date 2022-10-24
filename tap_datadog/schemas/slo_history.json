@@ -7,6 +7,12 @@
                 "null"
             ]
         },
+        "sync_to": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
         "type_id": {
             "type": [
                 "number",
