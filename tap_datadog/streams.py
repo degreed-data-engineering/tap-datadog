@@ -109,9 +109,6 @@ class SLO_History(TapDatadogStream):
         
 
 
-        self.full_sync_next_page = 1662619320
-
-
         self.get_next_page_token_epoch = 0
 
         self.full_sync_to_ts = 0
@@ -167,6 +164,7 @@ class SLO_History(TapDatadogStream):
         first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
         first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
 
+        self.logger.info(f"_get_first_of_month_epoch:  {first_day_of_month_date_epoch}")
         return first_day_of_month_date_epoch
 
 
@@ -188,7 +186,7 @@ class SLO_History(TapDatadogStream):
 
                 self.logger.info("FULL STREAM")
                 self.logger.info(f"first of month: {first_of_month_epoch}")
-                self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
+                self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
 
                 params["from_ts"] = first_of_month_epoch
                 params["to_ts"] = self.get_next_page_token_epoch
@@ -198,8 +196,9 @@ class SLO_History(TapDatadogStream):
 
             else: 
                 
-                self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+                
                 first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+                self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
                 
                 self.logger.info("******NON FULL STREAM******")
                 self.logger.info(f"first of month: {first_of_month_epoch}")
@@ -248,12 +247,12 @@ class SLO_History(TapDatadogStream):
         #     self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
         #     return None
 
-            self.logger.info(f"Next page token generated: {self.get_next_page_token_epoch}")
 
 
-            next_page_token = self.get_next_page_token_epoch + 86400
+            self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+            self.logger.info(f"get_next_page_token: {self.get_next_page_token_epoch}")
 
-            return next_page_token
+            return self.get_next_page_token_epoch
  
     
     # def _get_epoch_date_values(self):
