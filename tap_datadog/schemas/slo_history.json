@@ -9,17 +9,11 @@
         },
         "slo_id": {
             "type": [
-                "number",
+                "string",
                 "null"
             ]
         },
         "type_id": {
-            "type": [
-                "number",
-                "null"
-            ]
-        },
-        "last_sync_epoch": {
             "type": [
                 "number",
                 "null"
