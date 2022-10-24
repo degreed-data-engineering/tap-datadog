@@ -106,7 +106,7 @@ class SLO_History(TapDatadogStream):
         self.slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
 
         self.configuration_start_date = self.config["start_date"]
-        self.current_epoch = int(time.time())
+        
 
 
         self.full_sync_next_page = 1662619320
@@ -119,10 +119,7 @@ class SLO_History(TapDatadogStream):
         self.next_page_token_epoch = 0
         self.end_of_month_limit_epoch = 0
 
-        self.logger.info(f'FULL_SYNC_DATA')
-        self.logger.info(self.configuration_start_date)
-        self.logger.info(f'CURRENT_TIME')
-        self.logger.info(self.current_epoch)
+
     
 
 
@@ -200,7 +197,7 @@ class SLO_History(TapDatadogStream):
                 self.first_run = False
 
             else: 
-
+                
                 self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
                 first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
                 
@@ -212,7 +209,7 @@ class SLO_History(TapDatadogStream):
                 params["to_ts"] = self.get_next_page_token_epoch
 
 
-                if self.get_next_page_token_epoch + 86400 >= self.current_epoch:
+                if self.get_next_page_token_epoch + 86400 >= int(time.time()):
                     self.slo_date_overreach = True
                 
 
@@ -240,15 +237,23 @@ class SLO_History(TapDatadogStream):
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
 
-        if self.slo_date_overreach == True:
+        if self.get_next_page_token_epoch + 86400 >= int(time.time()):
             self.logger.info("No more next page token")
             self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
+
             return None
+        else: 
+        # if self.slo_date_overreach == True:
+        #     self.logger.info("No more next page token")
+        #     self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
+        #     return None
 
-        self.logger.info(f"Next page token generated: {self.get_next_page_token_epoch}")
-        next_page_token = self.get_next_page_token_epoch
+            self.logger.info(f"Next page token generated: {self.get_next_page_token_epoch}")
 
-        return next_page_token
+
+            next_page_token = self.get_next_page_token_epoch + 86400
+
+            return next_page_token
  
     
     # def _get_epoch_date_values(self):
