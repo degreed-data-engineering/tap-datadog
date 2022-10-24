@@ -1,4 +1,5 @@
 """Stream class for tap-datadog."""
+from doctest import FAIL_FAST
 import logging
 import sys
 
@@ -15,7 +16,17 @@ from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import SimpleAuthenticator
 
-
+from singer_sdk.helpers._state import (
+    finalize_state_progress_markers,
+    get_starting_replication_value,
+    get_state_partitions_list,
+    get_writeable_state_dict,
+    increment_state,
+    log_sort_error,
+    reset_state_progress_markers,
+    write_replication_key_signpost,
+    write_starting_replication_value,
+)
 from singer_sdk import Tap, Stream
 
 import requests
@@ -89,12 +100,38 @@ class SLO_History(TapDatadogStream):
     def __init__(self, tap: Tap):
         super().__init__(tap)
         self.logger = logging.getLogger(__name__)
+
+        self.slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
+
+        self.full_sync_date = self.config["start_date"]
+        self.current_epoch = int(time.time())
+
+
+        self.full_sync_next_page = 1662619320
+
+        self.full_sync_from_ts = 0
+        self.full_sync_to_ts = 0
+
+        self.logger.info(f'FULL_SYNC_DATA')
+        self.logger.info(self.full_sync_date)
+        self.logger.info(f'CURRENT_TIME')
+        self.logger.info(self.current_epoch)
+    
+
         self.first_of_month_epoch, self.to_time_epoch = self._get_epoch_date_values()
+        #self.replication_value_test = self.get_starting_replication_key_value(TapDatadogStream)
+
+
+        self.first_run = True
+        self.slo_date_overreach = False
+
+        
+        
        # config_start_date = TapDatadogStream.config.get("start_date")
+        
 
     name = "slo_history" # Stream name 
-    primary_keys = ["type_id"]
-    #replication_key = "modified"
+    
 
     rest_method = "GET"
     
@@ -126,23 +163,72 @@ class SLO_History(TapDatadogStream):
 
             return first_of_month_epoch, to_time_epoch
 
-
     slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
+    
 
     #path = f"/api/v1/slo/{slo_id}/history?from_ts={first_of_month_epoch}&to_ts={to_time_epoch}" # API endpoint after base_url 
     path = f"/api/v1/slo/{slo_id}/history"
-    #records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
-    records_jsonpath = "$[*]" # https://jsonpath.com Use requests response json to identify the json path 
-    replication_key = None
+    records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
+    #next_page_token_jsonpath = "$.data.next_page_key"  # Or override `get_next_page_token`.
+    #records_jsonpath = "$[*]" # https://jsonpath.com Use requests response json to identify the json path 
+    
+    next_page_token = 0
+
+    primary_keys = ["type_id"]
+    replication_key = "to_ts"
     schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
     
 
     def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {}
-        params["from_ts"] = self.first_of_month_epoch
-        params["to_ts"] = self.to_time_epoch
-    
+        # params["from_ts"] = self.first_of_month_epoch
+        # params["to_ts"] = self.to_time_epoch
+
+
+        if "to_ts" not in self.stream_state:
+            if self.first_run:
+                self.logger.info("FULL STREAM")
+                # Get Start date for initial full sync
+                year, month, day = self.full_sync_date.split('-')
+
+                config_start_date = datetime(int(year), int(month), int(day), 0, 0, 0)
+                self.full_sync_from_ts = calendar.timegm(config_start_date.timetuple())
+                
+                self.full_sync_to_ts = self.full_sync_from_ts  + 604800
+                
+                params["from_ts"] = self.full_sync_from_ts
+                params["to_ts"] = self.full_sync_to_ts
+
+                self.first_run = False
+            else: 
+                self.logger.info("NON FULL STREAM")
+                self.full_sync_from_ts = self.full_sync_to_ts
+                self.full_sync_to_ts = self.full_sync_from_ts + 604800
+
+                if self.full_sync_to_ts >= self.current_epoch:
+                    self.full_sync_to_ts = self.current_epoch
+                    self.slo_date_overreach = True
+
+                params["from_ts"] = self.full_sync_from_ts
+                params["to_ts"] = self.full_sync_to_ts
+
+
+      
+
+
+                    
+                self.next_page_token_date = self.full_sync_to_ts
+
+        self.logger.info("NEXTPAGE_TOKEN")
+        self.logger.info(self.full_sync_next_page)
+        # next_page_token = self.full_sync_next_page
+
+
+        # self.logger.info("replication_key_value****")
+        # self.logger.info(self.get_starting_replication_key_value(TapDatadogStream))
+
+
         return params
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
@@ -150,10 +236,42 @@ class SLO_History(TapDatadogStream):
 
         self.logger.info("LOGGGER:")
 
-        row["sync_to"] = "blarger"
-        new_row = json.dumps(row)
-        self.logger.info(new_row)
+        row["slo_id"] = self.slo_id
+       # row["last_sync_epoch"] = 1666483188
+        row["next_page_key"] = self.full_sync_next_page
+
+        self.next_page_token = self.full_sync_next_page
+        # new_row = json.dumps(row)
+        # self.logger.info(new_row)
+        self.logger.info("REPLICATIONKEYYYYY:")
+        
+
+        if "to_ts" in self.stream_state:
+            self.logger.info("BLARG ON ICE")
+            
+        self.logger.info(row)
+
+                
         return row
+
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        # TODO: If pagination is required, return a token which can be used to get the
+        #       next page. If this is the final page, return "None" to end the
+        #       pagination loop.
+
+        if self.slo_date_overreach == True:
+            return None
+
+        self.logger.info("BLARGer cheese")
+        next_page_token = self.full_sync_to_ts
+
+        self.logger.info(next_page_token)
+        return next_page_token
+ 
    
  #{"type": "STATE", "value": {"bookmarks": {"slo_history": {"last_record": "2017-07-07T10:20:00Z"}}}}
     # schema = th.PropertiesList(

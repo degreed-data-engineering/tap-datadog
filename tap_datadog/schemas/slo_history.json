@@ -7,13 +7,25 @@
                 "null"
             ]
         },
-        "sync_to": {
+        "slo_id": {
             "type": [
                 "number",
                 "null"
             ]
         },
         "type_id": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "last_sync_epoch": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "next_page_key": {
             "type": [
                 "number",
                 "null"
