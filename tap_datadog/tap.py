@@ -10,6 +10,7 @@ from singer_sdk import typing as th
 
 from tap_datadog.streams import (
     AggregateLogs,
+    Metric_Response_Time,
     SLO_History_US_Prod,
     SLO_History_EU_Prod,
     SLO_History_CA_Prod,
@@ -19,6 +20,7 @@ PLUGIN_NAME = "tap-datadog"
 
 STREAM_TYPES = [ 
     AggregateLogs,
+    Metric_Response_Time,
     SLO_History_US_Prod,
     SLO_History_EU_Prod,
     SLO_History_CA_Prod,
