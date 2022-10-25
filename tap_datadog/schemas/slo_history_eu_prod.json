@@ -1,0 +1,246 @@
+{
+    "type": "object",
+    "properties": {
+        "to_ts": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "slo_id": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "type_id": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "next_page_key": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "thresholds": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "30d": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        },
+                        "target_display": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "timeframe": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "overall": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "name": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "sli_value": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "precision": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "30d": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        },
+                        "custom": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "monitor_modified": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "span_precision": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "monitor_type": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "from_ts": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "slo": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "properties": {
+                "description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "creator": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "handle": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "name": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "email": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "thresholds": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "target": {
+                            "type": [
+                                "number",
+                                "null"
+                            ]
+                        },
+                        "target_display": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "timeframe": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "type_id": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "id": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "name": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "created_at": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "tags": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": [
+                            "string"
+                        ]
+                    }
+                },
+                "modified_at": {
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "type": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "type": {
+            "type": [
+                "string",
+                "null"
+            ]
+        }
+    }
+}

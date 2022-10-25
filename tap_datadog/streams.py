@@ -16,19 +16,6 @@ from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import SimpleAuthenticator
 
-
-from singer_sdk.helpers._state import (
-    finalize_state_progress_markers,
-    get_starting_replication_value,
-    get_state_partitions_list,
-    get_writeable_state_dict,
-    increment_state,
-    log_sort_error,
-    reset_state_progress_markers,
-    write_replication_key_signpost,
-    write_starting_replication_value,
-)
-
 from singer_sdk import Tap, Stream
 
 import requests
@@ -90,15 +77,8 @@ class AggregateLogs(TapDatadogStream):
         return payload
 
 
-
-# def blarg():
-#     return 1,2
-# hello,bye = blarg()
-# print(hello,bye)
-class SLO_History(TapDatadogStream):        
-# weekly (not daily)
-# monday - sunday
-# start at August 
+class SLO_History_US_Prod(TapDatadogStream):        
+ 
     def __init__(self, tap: Tap):
         super().__init__(tap)
         self.logger = logging.getLogger(__name__)
@@ -106,53 +86,23 @@ class SLO_History(TapDatadogStream):
         self.slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
 
         self.configuration_start_date = self.config["start_date"]
-        
-
-
         self.get_next_page_token_epoch = 0
-
-        self.full_sync_to_ts = 0
-
-        self.next_page_token_epoch = 0
         self.end_of_month_limit_epoch = 0
-
-
         self.replication_key_value = 0
-
-        #self.first_of_month_epoch, self.to_time_epoch = self._get_epoch_date_values()
-        #self.replication_value_test = self.get_starting_replication_key_value(TapDatadogStream)
-
-
         self.first_run = True
         self.slo_date_overreach = False
         
-    # config_start_date = TapDatadogStream.config.get("start_date")    
-
-    name = "slo_history" # Stream name 
-    
+    name = "slo_history_us_prod" # Stream name 
     rest_method = "GET"
-    
-
-
-
-
-
     slo_id = 'e96fa5aa00dc57af8718c8e7044b0f51' # prod-us
-    
-
-    #path = f"/api/v1/slo/{slo_id}/history?from_ts={first_of_month_epoch}&to_ts={to_time_epoch}" # API endpoint after base_url 
     path = f"/api/v1/slo/{slo_id}/history"
     records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
-    #next_page_token_jsonpath = "$.data.next_page_key"  # Or override `get_next_page_token`.
-    #records_jsonpath = "$[*]" # https://jsonpath.com Use requests response json to identify the json path 
-    
     next_page_token = 0
 
     #primary_keys = ["type_id"]
     replication_key = "to_ts"
-    schema_filepath = SCHEMAS_DIR / "slo_history.json"  # Optional: use schema_filepath with .json inside schemas/ 
+    schema_filepath = SCHEMAS_DIR / "slo_history_us_prod.json"  # Optional: use schema_filepath with .json inside schemas/ 
     
-
 
     def _get_first_of_month_epoch(self, epoch):
 
@@ -170,12 +120,6 @@ class SLO_History(TapDatadogStream):
     def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {}
-
-        # self.logger.info(f"STTE VALUE: {self.stream_state}")
-
-        # self.replication_key_value = self.stream_state["replication_key_value"]
-        # self.logger.info(f"STTE VALUE: {self.replication_key_value}")
-
         try:
             if self.replication_key_value == 0:
                 self.replication_key_value = self.stream_state["replication_key_value"]
@@ -216,12 +160,6 @@ class SLO_History(TapDatadogStream):
                     self.first_run = False
                     
                 else: 
-                    #1666396800
-                    
-                
-
-                    #1666396800
-
                     first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
                     self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
                     
@@ -241,13 +179,7 @@ class SLO_History(TapDatadogStream):
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
 
-
         row["slo_id"] = self.slo_id
-       # row["last_sync_epoch"] = 1666483188
-        # row["next_page_key"] = self.full_sync_next_page
-        # self.next_page_token = self.full_sync_next_page
-        
-
         if "to_ts" in self.stream_state:
             self.logger.info("Found to_ts state value")
             
@@ -267,19 +199,273 @@ class SLO_History(TapDatadogStream):
 
             return None
         else: 
-        # if self.slo_date_overreach == True:
-        #     self.logger.info("No more next page token")
-        #     self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
-        #     return None
-
-
-
-          #  self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
             self.logger.info(f"get_next_page_token: {self.get_next_page_token_epoch}")
+            return self.get_next_page_token_epoch
+ 
+class SLO_History_EU_Prod(TapDatadogStream):        
+ 
+    def __init__(self, tap: Tap):
+        super().__init__(tap)
+        self.logger = logging.getLogger(__name__)
 
+        self.slo_id = '12b1e51cb1bd57928ce126502a9a7e01' # prod-us
+
+        self.configuration_start_date = self.config["start_date"]
+        self.get_next_page_token_epoch = 0
+        self.end_of_month_limit_epoch = 0
+        self.replication_key_value = 0
+        self.first_run = True
+        self.slo_date_overreach = False
+        
+    name = "slo_history_eu_prod" # Stream name 
+    rest_method = "GET"
+    slo_id = '12b1e51cb1bd57928ce126502a9a7e01' # prod-us
+    path = f"/api/v1/slo/{slo_id}/history"
+    records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
+    next_page_token = 0
+
+    #primary_keys = ["type_id"]
+    replication_key = "to_ts"
+    schema_filepath = SCHEMAS_DIR / "slo_history_eu_prod.json"  # Optional: use schema_filepath with .json inside schemas/ 
+    
+
+    def _get_first_of_month_epoch(self, epoch):
+
+        date_time = datetime.fromtimestamp(epoch)  
+        date_split = str(date_time).split(' ') 
+        year, month, day = date_split[0].split('-')
+
+        first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
+        first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
+
+        self.logger.info(f"_get_first_of_month_epoch:  {first_day_of_month_date_epoch}")
+        return first_day_of_month_date_epoch
+
+
+    def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params: dict = {}
+        try:
+            if self.replication_key_value == 0:
+                self.replication_key_value = self.stream_state["replication_key_value"]
+                self.get_next_page_token_epoch = self.replication_key_value + 86400
+            else:
+                self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+            
+            first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+            
+
+            params["from_ts"] = first_of_month_epoch
+            params["to_ts"] = self.get_next_page_token_epoch
+
+            if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+                self.slo_date_overreach = True
+            
+
+        except:
+            if "to_ts" not in self.stream_state:
+                if self.first_run:
+
+                    # Get Start date for initial full sync
+                    year, month, day = self.configuration_start_date.split('-')
+
+                    first_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
+                    first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+                    self.get_next_page_token_epoch = first_of_month_epoch + 86400
+
+                    self.logger.info("FULL STREAM")
+                    self.logger.info(f"first of month: {first_of_month_epoch}")
+                    self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
+
+                    params["from_ts"] = first_of_month_epoch
+                    params["to_ts"] = self.get_next_page_token_epoch
+
+                    
+                    self.first_run = False
+                    
+                else: 
+                    first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+                    self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+                    
+                    self.logger.info("******NON FULL STREAM******")
+                    self.logger.info(f"first of month: {first_of_month_epoch}")
+                    self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
+
+                    params["from_ts"] = first_of_month_epoch
+                    params["to_ts"] = self.get_next_page_token_epoch
+
+
+                    if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+                        self.slo_date_overreach = True
+                
+
+        return params
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+
+        row["slo_id"] = self.slo_id
+        if "to_ts" in self.stream_state:
+            self.logger.info("Found to_ts state value")
+            
+        self.logger.info(row)
+                
+        return row
+
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        """Return a token for identifying next page or None if no more pages."""
+
+        if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+            self.logger.info("No more next page token")
+            self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
+
+            return None
+        else: 
+            self.logger.info(f"get_next_page_token: {self.get_next_page_token_epoch}")
+            return self.get_next_page_token_epoch
+ 
+
+class SLO_History_CA_Prod(TapDatadogStream):        
+ 
+    def __init__(self, tap: Tap):
+        super().__init__(tap)
+        self.logger = logging.getLogger(__name__)
+
+        self.slo_id = '36ecf33bedb25fedb64d9ef843780c8b' # prod-us
+
+        self.configuration_start_date = self.config["start_date"]
+        self.get_next_page_token_epoch = 0
+        self.end_of_month_limit_epoch = 0
+        self.replication_key_value = 0
+        self.first_run = True
+        self.slo_date_overreach = False
+        
+    name = "slo_history_ca_prod" # Stream name 
+    rest_method = "GET"
+    slo_id = '36ecf33bedb25fedb64d9ef843780c8b' # prod-us
+    path = f"/api/v1/slo/{slo_id}/history"
+    records_jsonpath = "$.data" # https://jsonpath.com Use requests response json to identify the json path 
+    next_page_token = 0
+
+    #primary_keys = ["type_id"]
+    replication_key = "to_ts"
+    schema_filepath = SCHEMAS_DIR / "slo_history_ca_prod.json"  # Optional: use schema_filepath with .json inside schemas/ 
+    
+
+    def _get_first_of_month_epoch(self, epoch):
+
+        date_time = datetime.fromtimestamp(epoch)  
+        date_split = str(date_time).split(' ') 
+        year, month, day = date_split[0].split('-')
+
+        first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
+        first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
+
+        self.logger.info(f"_get_first_of_month_epoch:  {first_day_of_month_date_epoch}")
+        return first_day_of_month_date_epoch
+
+
+    def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params: dict = {}
+        try:
+            if self.replication_key_value == 0:
+                self.replication_key_value = self.stream_state["replication_key_value"]
+                self.get_next_page_token_epoch = self.replication_key_value + 86400
+            else:
+                self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+            
+            first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+            
+
+            params["from_ts"] = first_of_month_epoch
+            params["to_ts"] = self.get_next_page_token_epoch
+
+            if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+                self.slo_date_overreach = True
+            
+
+        except:
+            if "to_ts" not in self.stream_state:
+                if self.first_run:
+
+                    # Get Start date for initial full sync
+                    year, month, day = self.configuration_start_date.split('-')
+
+                    first_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
+                    first_of_month_epoch = calendar.timegm(first_of_month_date.timetuple())
+
+                    self.get_next_page_token_epoch = first_of_month_epoch + 86400
+
+                    self.logger.info("FULL STREAM")
+                    self.logger.info(f"first of month: {first_of_month_epoch}")
+                    self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
+
+                    params["from_ts"] = first_of_month_epoch
+                    params["to_ts"] = self.get_next_page_token_epoch
+
+                    
+                    self.first_run = False
+                    
+                else: 
+                    first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
+                    self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
+                    
+                    self.logger.info("******NON FULL STREAM******")
+                    self.logger.info(f"first of month: {first_of_month_epoch}")
+                    self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
+
+                    params["from_ts"] = first_of_month_epoch
+                    params["to_ts"] = self.get_next_page_token_epoch
+
+
+                    if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+                        self.slo_date_overreach = True
+                
+
+        return params
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+
+        row["slo_id"] = self.slo_id
+        if "to_ts" in self.stream_state:
+            self.logger.info("Found to_ts state value")
+            
+        self.logger.info(row)
+                
+        return row
+
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        """Return a token for identifying next page or None if no more pages."""
+
+        if self.get_next_page_token_epoch + 86400 >= int(time.time()):
+            self.logger.info("No more next page token")
+            self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
+
+            return None
+        else: 
+            self.logger.info(f"get_next_page_token: {self.get_next_page_token_epoch}")
             return self.get_next_page_token_epoch
  
     
+    
+
+
+
+
+
+
+
+
+
+
+
     # def _get_epoch_date_values(self):
     #     today = datetime.today()
 
