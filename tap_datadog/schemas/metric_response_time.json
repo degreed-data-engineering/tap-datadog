@@ -1,0 +1,72 @@
+{
+    "type": "object",
+    "properties": {
+        "schema": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "resp_version": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "series": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "metric": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "scope": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "pointlist": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "type": [
+                                    "number"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "pointlist"
+                ]
+            }
+        },
+        "to_date": {
+            "type": [
+                "number",
+                "null"
+            ]
+        },
+        "query": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "from_date": {
+            "type": [
+                "number",
+                "null"
+            ]
+        }
+    },
+    "required": [
+        "series"
+    ]
+}
