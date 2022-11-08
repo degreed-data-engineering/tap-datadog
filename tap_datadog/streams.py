@@ -86,12 +86,12 @@ class AggregateLogs(TapDatadogStream):
         to_date = f"{yesterdayUTC}T23:12:59+03:00"
 
         payload = {"compute": [{"aggregation": "count", "type": "total" }, { "aggregation": "sum", "type": "total", "metric": "@Properties.Elapsed" } ], "filter": { "query": "source:degreed.api @MessageTemplate:\"HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms\" host: " + self.host[self.current_host], "from": from_date, "to": to_date, "indexes": [ "main" ] }, "group_by": [ { "facet": "@http.status_code" }, { "facet": "@Properties.OrganizationId" }, { "facet": "@Properties.PathTemplate" }, { "facet": "@Properties.RequestMethod" } ] }
-        print(payload)
+
         return payload
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
 
-        row["by"]["host_name"] = self.host[self.current_host]
+        row["host_name"] = self.host[self.current_host]
 
         return row
 
