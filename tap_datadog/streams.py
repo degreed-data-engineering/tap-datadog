@@ -70,7 +70,6 @@ class AggregateLogs(TapDatadogStream):
     rest_method = "POST"
     #primary_keys = ["id"]
 
-    
     records_jsonpath = "$.data.buckets.[*]" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
     schema_filepath = SCHEMAS_DIR / "aggregate_logs.json"  # Optional: use schema_filepath with .json inside schemas/ 
@@ -94,8 +93,6 @@ class AggregateLogs(TapDatadogStream):
 
         row["by"]["host_name"] = self.host[self.current_host]
 
-        self.logger.info(row)
-                
         return row
 
 
@@ -109,18 +106,6 @@ class AggregateLogs(TapDatadogStream):
             return self.current_host
         else:
             return None
-        # if self.get_next_page_token_epoch + 86400 >= int(time.time()):
-        #     self.logger.info("No more next page token")
-        #     self.logger.info(f"the previous token WAS: {self.get_next_page_token_epoch}")
-
-        #     return None
-        # else: 
-        #     self.logger.info(f"get_next_page_token: {self.get_next_page_token_epoch}")
-        #     return self.get_next_page_token_epoch
- 
-
-
-
 class Metric_Response_Time(TapDatadogStream):        
  
     def __init__(self, tap: Tap):
