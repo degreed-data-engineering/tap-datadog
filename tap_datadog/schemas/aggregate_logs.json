@@ -51,6 +51,12 @@
                         "null"
                     ]
                 }
+            },
+            "host_name": {
+                "type": [
+                    "string",
+                    "null"
+                ]
             }
         }
     }
