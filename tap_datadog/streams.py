@@ -51,13 +51,25 @@ class TapDatadogStream(RESTStream):
 
         return SimpleAuthenticator(stream=self, auth_headers=http_headers)
 
+
 class AggregateLogs(TapDatadogStream):
+
+    def __init__(self, tap: Tap):
+        super().__init__(tap)
+        self.logger = logging.getLogger(__name__)
+
+        self.current_host = 0 
+        self.host = [
+            "api.degreed.com",
+            "api.eu.degreed.com",
+            "api.ca.degreed.com"
+        ]
+
     name = "aggregate_logs" # Stream name 
     path = "/api/v2/logs/analytics/aggregate" # API endpoint after base_url 
     rest_method = "POST"
     #primary_keys = ["id"]
 
-    
     records_jsonpath = "$.data.buckets.[*]" # https://jsonpath.com Use requests response json to identify the json path 
     replication_key = None
     schema_filepath = SCHEMAS_DIR / "aggregate_logs.json"  # Optional: use schema_filepath with .json inside schemas/ 
@@ -73,11 +85,27 @@ class AggregateLogs(TapDatadogStream):
         from_date = f"{yesterdayUTC}T00:00:00+03:00"
         to_date = f"{yesterdayUTC}T23:12:59+03:00"
 
-        payload = {"compute": [{"aggregation": "count", "type": "total" }, { "aggregation": "sum", "type": "total", "metric": "@Properties.Elapsed" } ], "filter": { "query": "source:degreed.api @MessageTemplate:\"HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms\" host: api.degreed.com OR api.eu.degreed.com OR api.ca.degreed.com", "from": from_date, "to": to_date, "indexes": [ "main" ] }, "group_by": [ { "facet": "status" }, { "facet": "host" }, { "facet": "@http.status_code" }, { "facet": "@Properties.OrganizationId" } ] }
+        payload = {"compute": [{"aggregation": "count", "type": "total" }, { "aggregation": "sum", "type": "total", "metric": "@Properties.Elapsed" } ], "filter": { "query": "source:degreed.api @MessageTemplate:\"HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms\" host: " + self.host[self.current_host], "from": from_date, "to": to_date, "indexes": [ "main" ] }, "group_by": [ { "facet": "@http.status_code" }, { "facet": "@Properties.OrganizationId" }, { "facet": "@Properties.PathTemplate" }, { "facet": "@Properties.RequestMethod" } ] }
+
         return payload
 
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+
+        row["host_name"] = self.host[self.current_host]
+
+        return row
 
 
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        """Return a token for identifying next page or None if no more pages."""
+
+        if self.current_host != len(self.host) - 1:
+            self.current_host += 1
+            return self.current_host
+        else:
+            return None
 class Metric_Response_Time(TapDatadogStream):        
  
     def __init__(self, tap: Tap):
