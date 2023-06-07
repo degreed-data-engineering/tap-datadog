@@ -158,7 +158,6 @@ class Metric_Response_Time(TapDatadogStream):
         first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
         first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
 
-        self.logger.info(f"First of the month epoch:  {first_day_of_month_date_epoch}")
         return first_day_of_month_date_epoch
 
 
@@ -195,23 +194,14 @@ class Metric_Response_Time(TapDatadogStream):
 
                     self.get_next_page_token_epoch = first_of_month_epoch + 86400
 
-                    self.logger.info("Running FULL STREAM replication for Metric_Response_Time")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"To ts date: {self.get_next_page_token_epoch}")
-
                     params["from"] = first_of_month_epoch
                     params["to"] = self.get_next_page_token_epoch
 
-                    
                     self.first_run = False
                     
                 else: 
                     first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
                     self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
-                    
-                    self.logger.info("Running INCREMENTAL STREAM replication for Metric_Response_Time")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
 
                     params["from"] = first_of_month_epoch
                     params["to"] = self.get_next_page_token_epoch
@@ -219,11 +209,6 @@ class Metric_Response_Time(TapDatadogStream):
                     if self.get_next_page_token_epoch + 86400 >= int(time.time()):
                         self.slo_date_overreach = True
         return params
-
-    def post_process(self, row: dict, context: Optional[dict]) -> dict:
-        if "to_date" in self.stream_state:
-            self.logger.info("Found to_ts state value")
-        return row
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]
@@ -233,7 +218,6 @@ class Metric_Response_Time(TapDatadogStream):
         if self.get_next_page_token_epoch + 86400 >= int(time.time()):
             return None
         else: 
-            self.logger.info(f"Next page token: {self.get_next_page_token_epoch}")
             return self.get_next_page_token_epoch
  
 
@@ -272,7 +256,6 @@ class SLO_History_US_Prod(TapDatadogStream):
         first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
         first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
 
-        self.logger.info(f"First of the month epoch:  {first_day_of_month_date_epoch}")
         return first_day_of_month_date_epoch
 
     def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
@@ -303,20 +286,12 @@ class SLO_History_US_Prod(TapDatadogStream):
 
                     self.get_next_page_token_epoch = first_of_month_epoch + 86400
 
-                    self.logger.info("Running FULL STREAM for SLO_History_US_Prod")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
-
                     params["from_ts"] = first_of_month_epoch
                     params["to_ts"] = self.get_next_page_token_epoch
                     self.first_run = False
                 else: 
                     first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
                     self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
-                    
-                    self.logger.info("Running INCREMENTAL STREAM for SLO_History_US_Prod")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
 
                     params["from_ts"] = first_of_month_epoch
                     params["to_ts"] = self.get_next_page_token_epoch
@@ -326,9 +301,7 @@ class SLO_History_US_Prod(TapDatadogStream):
         return params
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
-        row["slo_id"] = self.slo_id
-        if "to_ts" in self.stream_state:
-            self.logger.info("Found to_ts state value")                
+        row["slo_id"] = self.slo_id            
         return row
 
     def get_next_page_token(
@@ -339,7 +312,6 @@ class SLO_History_US_Prod(TapDatadogStream):
         if self.get_next_page_token_epoch + 86400 >= int(time.time()):
             return None
         else: 
-            self.logger.info(f"Next page token: {self.get_next_page_token_epoch}")
             return self.get_next_page_token_epoch
  
 class SLO_History_EU_Prod(TapDatadogStream):        
@@ -374,7 +346,6 @@ class SLO_History_EU_Prod(TapDatadogStream):
         first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
         first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
 
-        self.logger.info(f"First of the month epoch:  {first_day_of_month_date_epoch}")
         return first_day_of_month_date_epoch
 
     def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
@@ -406,10 +377,6 @@ class SLO_History_EU_Prod(TapDatadogStream):
 
                     self.get_next_page_token_epoch = first_of_month_epoch + 86400
 
-                    self.logger.info("Running FULL STREAM for SLO_History_EU_Prod")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
-
                     params["from_ts"] = first_of_month_epoch
                     params["to_ts"] = self.get_next_page_token_epoch
                     
@@ -418,10 +385,6 @@ class SLO_History_EU_Prod(TapDatadogStream):
                 else: 
                     first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
                     self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
-                    
-                    self.logger.info("Running INCREMENTAL STREAM for SLO_History_EU_Prod")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
 
                     params["from_ts"] = first_of_month_epoch
                     params["to_ts"] = self.get_next_page_token_epoch
@@ -432,8 +395,6 @@ class SLO_History_EU_Prod(TapDatadogStream):
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
         row["slo_id"] = self.slo_id
-        if "to_ts" in self.stream_state:
-            self.logger.info("Found to_ts state value")
         return row
 
     def get_next_page_token(
@@ -444,7 +405,6 @@ class SLO_History_EU_Prod(TapDatadogStream):
         if self.get_next_page_token_epoch + 86400 >= int(time.time()):
             return None
         else: 
-            self.logger.info(f"Next page token: {self.get_next_page_token_epoch}")
             return self.get_next_page_token_epoch
  
 class SLO_History_CA_Prod(TapDatadogStream):        
@@ -478,7 +438,6 @@ class SLO_History_CA_Prod(TapDatadogStream):
         first_day_of_month_date = datetime(int(year), int(month), 1, 0, 0, 0)
         first_day_of_month_date_epoch  = calendar.timegm(first_day_of_month_date.timetuple())
 
-        self.logger.info(f"First of the month epoch:  {first_day_of_month_date_epoch}")
         return first_day_of_month_date_epoch
 
     def get_url_params(self, context: Optional[dict], next_page_token: Optional[Any]) -> Dict[str, Any]:
@@ -510,10 +469,6 @@ class SLO_History_CA_Prod(TapDatadogStream):
 
                     self.get_next_page_token_epoch = first_of_month_epoch + 86400
 
-                    self.logger.info("Running FULL STREAM for SLO_History_CA_Prod")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"To ts date::  {self.get_next_page_token_epoch}")
-
                     params["from_ts"] = first_of_month_epoch
                     params["to_ts"] = self.get_next_page_token_epoch
      
@@ -522,10 +477,6 @@ class SLO_History_CA_Prod(TapDatadogStream):
                 else: 
                     first_of_month_epoch = self._get_first_of_month_epoch(self.get_next_page_token_epoch)
                     self.get_next_page_token_epoch = self.get_next_page_token_epoch + 86400
-                    
-                    self.logger.info("Running INCREMENTAL STREAM for SLO_History_CA_Prod")
-                    self.logger.info(f"first of month: {first_of_month_epoch}")
-                    self.logger.info(f"Next page token:  {self.get_next_page_token_epoch}")
 
                     params["from_ts"] = first_of_month_epoch
                     params["to_ts"] = self.get_next_page_token_epoch
@@ -535,9 +486,7 @@ class SLO_History_CA_Prod(TapDatadogStream):
         return params
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
-        row["slo_id"] = self.slo_id
-        if "to_ts" in self.stream_state:
-            self.logger.info("Found to_ts state value")        
+        row["slo_id"] = self.slo_id     
         return row
 
     def get_next_page_token(
@@ -548,5 +497,4 @@ class SLO_History_CA_Prod(TapDatadogStream):
         if self.get_next_page_token_epoch + 86400 >= int(time.time()):
             return None
         else: 
-            self.logger.info(f"Next page token: {self.get_next_page_token_epoch}")
             return self.get_next_page_token_epoch
